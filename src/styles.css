@@ -31,6 +31,23 @@ a {
   text-decoration: none;
 }
 
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--green);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.actionButton.secondary {
+  background: var(--blue);
+}
+
 [hidden] {
   display: none !important;
 }
