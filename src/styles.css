@@ -1,0 +1,281 @@
+:root {
+  color-scheme: light;
+  --ink: #15181f;
+  --muted: #687080;
+  --line: #dde3ea;
+  --panel: #ffffff;
+  --bg: #f4f7f5;
+  --green: #0b7a5a;
+  --blue: #2458a7;
+  --gold: #b78321;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button {
+  font: inherit;
+}
+
+a {
+  color: var(--blue);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.loginScreen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.loginBox {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 16px;
+  padding: 26px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.loginBox h1 {
+  font-size: 38px;
+}
+
+.loginBox button {
+  height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--green);
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.loginError {
+  min-height: 20px;
+  margin: 0;
+  color: #a33a2b;
+  font-weight: 800;
+}
+
+.shell {
+  width: min(1440px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 40px;
+}
+
+.topbar,
+.controls,
+.summary,
+.layout {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  padding: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1.05;
+}
+
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted);
+  text-align: right;
+}
+
+#pricesUpdatedAt,
+#rangesUpdatedAt {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(6, minmax(120px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+input,
+select {
+  min-width: 0;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 12px;
+  background: #fbfcfd;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  text-transform: none;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.summary article {
+  padding: 18px;
+  background: #fbfcfd;
+}
+
+.summary span,
+td span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.summary strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 28px;
+}
+
+.layout {
+  display: block;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.tableWrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+}
+
+th,
+td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #eef3f7;
+  color: #394150;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+td {
+  font-size: 14px;
+}
+
+td b {
+  display: inline-grid;
+  place-items: center;
+  min-width: 42px;
+  height: 34px;
+  border-radius: 6px;
+  background: #f2dfa6;
+  color: #4d3710;
+}
+
+.mainPrice {
+  display: inline-block;
+  color: var(--green);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.empty {
+  margin: 0;
+  padding: 26px;
+  color: var(--muted);
+}
+
+@media (max-width: 980px) {
+  .topbar {
+    display: block;
+  }
+
+  .controls,
+  .summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    width: min(100% - 20px, 1440px);
+    padding-top: 10px;
+  }
+
+  .topbar,
+  .controls,
+  .summary {
+    grid-template-columns: 1fr;
+  }
+
+  .source {
+    margin-top: 18px;
+    justify-content: flex-start;
+    text-align: left;
+  }
+}

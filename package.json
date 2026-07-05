@@ -1,0 +1,14 @@
+{
+  "name": "mkfifa-rangos-gg",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/server.mjs",
+    "update:prices": "node scripts/update-futgg-prices.mjs",
+    "update:ranges": "node scripts/update-futgg-ranges.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.55.0"
+  }
+}

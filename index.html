@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MKFIFA Rangos GG</title>
+    <link rel="stylesheet" href="src/styles.css">
+  </head>
+  <body>
+    <section id="loginScreen" class="loginScreen">
+      <form id="loginForm" class="loginBox">
+        <p class="eyebrow">FC 26 - FUT.GG</p>
+        <h1>Acceso</h1>
+        <label>
+          Usuario
+          <input id="loginUser" type="text" autocomplete="username" required>
+        </label>
+        <label>
+          Contrasena
+          <input id="loginPassword" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">Entrar</button>
+        <p id="loginError" class="loginError" role="alert"></p>
+      </form>
+    </section>
+
+    <main id="appShell" class="shell" hidden>
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">FC 26 - FUT.GG</p>
+          <h1>Analizador de jugadores por rangos</h1>
+        </div>
+        <div class="source">
+          <span id="sourceCount">0 jugadores</span>
+          <span id="pricesUpdatedAt">Precios UTC: -</span>
+          <span id="rangesUpdatedAt">Rangos UTC: -</span>
+          <a href="https://www.fut.gg/players/new/" target="_blank" rel="noreferrer">Fuente</a>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="Filtros">
+        <label>
+          Buscar
+          <input id="searchInput" type="search" placeholder="Nombre, posicion...">
+        </label>
+        <label>
+          Plataforma
+          <select id="platform">
+            <option value="console">Consola</option>
+            <option value="pc">PC</option>
+          </select>
+        </label>
+        <label>
+          Precio maximo
+          <input id="maxPrice" type="number" min="0" step="100" placeholder="Sin limite">
+        </label>
+        <label>
+          Range minimo
+          <input id="minRange" type="text" inputmode="numeric" placeholder="Exacto">
+        </label>
+        <label>
+          Range maximo
+          <input id="maxRange" type="text" inputmode="numeric" placeholder="Exacto">
+        </label>
+        <label>
+          Posicion
+          <select id="positionFilter">
+            <option value="all">Todas</option>
+          </select>
+        </label>
+        <label>
+          Orden
+          <select id="sortBy">
+            <option value="rating-desc">Media alta</option>
+            <option value="price-asc">Precio bajo</option>
+            <option value="price-desc">Precio alto</option>
+            <option value="range-min-asc">Range min bajo</option>
+            <option value="range-min-desc">Range min alto</option>
+            <option value="range-max-asc">Range max bajo</option>
+            <option value="range-max-desc">Range max alto</option>
+            <option value="name-asc">Nombre A-Z</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="summary" aria-label="Resumen">
+        <article>
+          <span>Filtrados</span>
+          <strong id="filteredCount">0</strong>
+        </article>
+        <article>
+          <span>Precio promedio</span>
+          <strong id="avgPrice">0</strong>
+        </article>
+        <article>
+          <span>Con rango</span>
+          <strong id="rangeCount">0</strong>
+        </article>
+        <article>
+          <span>Mejor valor</span>
+          <strong id="bestValue">-</strong>
+        </article>
+      </section>
+
+      <section class="layout">
+        <section class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Jugador</th>
+                <th>Media</th>
+                <th>Posiciones</th>
+                <th>Agregado</th>
+                <th>Precio</th>
+                <th>Price range</th>
+              </tr>
+            </thead>
+            <tbody id="playersBody"></tbody>
+          </table>
+          <p id="emptyState" class="empty" hidden>No hay jugadores con esos filtros.</p>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="src/app.js?v=2026070501"></script>
+  </body>
+</html>

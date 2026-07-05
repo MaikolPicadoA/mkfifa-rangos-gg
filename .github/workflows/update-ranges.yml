@@ -1,0 +1,57 @@
+name: update-ranges
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_players:
+        description: "Max jugadores a revisar. Usa 0 para todos."
+        required: false
+        default: "0"
+      delay_ms:
+        description: "Pausa entre jugadores en milisegundos."
+        required: false
+        default: "50"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Update FUT.GG ranges and prices
+        env:
+          MAX_RANGE_PLAYERS: ${{ inputs.max_players }}
+          RANGE_DELAY_MS: ${{ inputs.delay_ms }}
+        run: npm run update:ranges
+
+      - name: Commit updated data
+        if: always()
+        run: |
+          if git diff --quiet data; then
+            echo "No data changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/players.json data/metadata.json
+          git commit -m "Update FUT.GG ranges"
+          git push
