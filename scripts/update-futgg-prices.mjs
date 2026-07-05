@@ -7,6 +7,15 @@ const PLAYERS_FILE = path.join(DATA_DIR, "players.json");
 const METADATA_FILE = path.join(DATA_DIR, "metadata.json");
 const FUTGG_API = "https://www.fut.gg/api/fut/players/v2/26/";
 const MANIFEST_URL = "https://r2.fut.gg/26/manifest.json";
+const OVERALL_BUCKETS = [
+  [90, 99],
+  [80, 89],
+  [70, 79],
+  [65, 69],
+  [60, 64],
+  [50, 59],
+  [1, 49],
+];
 
 const HEADERS = {
   "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
@@ -47,19 +56,30 @@ console.log(`Ranges kept: ${metadata.totalRanges}.`);
 console.log(`Prices UTC: ${metadata.pricesUpdatedAtUtc}.`);
 
 async function fetchAllPlayers() {
-  const firstPage = await fetchPlayerPage(1);
+  const playersByEaId = new Map();
+  for (const [minOverall, maxOverall] of OVERALL_BUCKETS) {
+    const bucketPlayers = await fetchPlayerBucket(minOverall, maxOverall);
+    bucketPlayers.forEach((player) => playersByEaId.set(Number(player.eaId), player));
+    console.log(`Accumulated unique players: ${playersByEaId.size}.`);
+  }
+
+  return [...playersByEaId.values()];
+}
+
+async function fetchPlayerBucket(minOverall, maxOverall) {
+  const firstPage = await fetchPlayerPage(1, minOverall, maxOverall);
   const totalPages = Math.ceil(firstPage.total / firstPage.data.length);
-  console.log(`FUT.GG players: ${firstPage.total}, pages: ${totalPages}.`);
+  console.log(`FUT.GG players ${minOverall}-${maxOverall}: ${firstPage.total}, pages: ${totalPages}.`);
 
   const pageNumbers = [];
   for (let page = 2; page <= totalPages; page += 1) pageNumbers.push(page);
 
-  const rest = await mapWithConcurrency(pageNumbers, 8, fetchPlayerPage);
+  const rest = await mapWithConcurrency(pageNumbers, 8, (page) => fetchPlayerPage(page, minOverall, maxOverall));
   return [firstPage, ...rest].flatMap((page) => page.data);
 }
 
-async function fetchPlayerPage(page) {
-  const url = `${FUTGG_API}?sorts=-created_at&page=${page}`;
+async function fetchPlayerPage(page, minOverall, maxOverall) {
+  const url = `${FUTGG_API}?sorts=-created_at&overall__gte=${minOverall}&overall__lte=${maxOverall}&page=${page}`;
   return fetchJson(url, { retries: 5 });
 }
 
