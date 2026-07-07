@@ -1,7 +1,29 @@
+name: update-ranges
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_players:
+        description: "Max jugadores a revisar. Usa 0 para todos."
+        required: false
+        default: "0"
+      delay_ms:
+        description: "Pausa entre jugadores en milisegundos."
+        required: false
+        default: "50"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: futgg-data-update
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 360
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,3 +51,19 @@ jobs:
           MAX_RANGE_PLAYERS: ${{ inputs.max_players }}
           RANGE_DELAY_MS: ${{ inputs.delay_ms }}
         run: npm.cmd run update:ranges
+
+      - name: Commit updated data
+        if: always()
+        shell: powershell
+        run: |
+          git diff --quiet data
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "No data changes."
+            exit 0
+          }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/players.json data/metadata.json
+          git commit -m "Update FUT.GG ranges"
+          git push origin HEAD:gh-pages
