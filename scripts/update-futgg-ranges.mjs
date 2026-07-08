@@ -10,6 +10,10 @@ const MAX_PLAYERS = Number(process.env.MAX_RANGE_PLAYERS || "0");
 const SAVE_EVERY = Number(process.env.SAVE_EVERY || "25");
 const DELAY_MS = Number(process.env.RANGE_DELAY_MS || "50");
 const REFRESH_EXISTING_RANGES = process.env.REFRESH_EXISTING_RANGES === "1";
+const RATE_LIMIT_RETRIES = Number(process.env.RANGE_RATE_LIMIT_RETRIES || "6");
+const RATE_LIMIT_COOLDOWN_MS = Number(process.env.RANGE_RATE_LIMIT_COOLDOWN_MS || "120000");
+const BATCH_COOLDOWN_EVERY = Number(process.env.RANGE_BATCH_COOLDOWN_EVERY || "500");
+const BATCH_COOLDOWN_MS = Number(process.env.RANGE_BATCH_COOLDOWN_MS || "600000");
 
 console.log("Refreshing prices before ranges.");
 await import("./update-futgg-prices.mjs");
@@ -25,6 +29,8 @@ const limitedTargets = MAX_PLAYERS > 0 ? targets.slice(0, MAX_PLAYERS) : targets
 
 console.log(`Range targets: ${limitedTargets.length}/${players.length}.`);
 console.log(`Refresh existing ranges: ${REFRESH_EXISTING_RANGES ? "yes" : "no"}.`);
+console.log(`Rate limit retries: ${RATE_LIMIT_RETRIES}, cooldown ms: ${RATE_LIMIT_COOLDOWN_MS}.`);
+console.log(`Batch cooldown: every ${BATCH_COOLDOWN_EVERY}, ms: ${BATCH_COOLDOWN_MS}.`);
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
@@ -60,7 +66,7 @@ try {
   for (let index = 0; index < limitedTargets.length; index += 1) {
     const player = limitedTargets[index];
     try {
-      const result = await fetchRangeInPage(page, player.eaId);
+      const result = await fetchRangeWithRetries(page, player);
       if (result?.minPrice || result?.maxPrice) {
         player.priceRange = {
           min: Number(result.minPrice ?? 0),
@@ -82,6 +88,10 @@ try {
       console.log(`Range progress ${index + 1}/${limitedTargets.length}, updated ${updated}, failed ${failed}.`);
     }
     if (DELAY_MS > 0) await delay(DELAY_MS);
+    if (BATCH_COOLDOWN_EVERY > 0 && BATCH_COOLDOWN_MS > 0 && (index + 1) % BATCH_COOLDOWN_EVERY === 0 && index + 1 < limitedTargets.length) {
+      console.log(`Range cooldown after ${index + 1}/${limitedTargets.length}: ${BATCH_COOLDOWN_MS}ms.`);
+      await delay(BATCH_COOLDOWN_MS);
+    }
   }
 } finally {
   await browser.close();
@@ -94,6 +104,22 @@ await save(players, metadata);
 console.log(`Ranges updated this run: ${updated}.`);
 console.log(`Ranges failed this run: ${failed}.`);
 console.log(`Total players with ranges: ${metadata.totalRanges}.`);
+
+async function fetchRangeWithRetries(page, player) {
+  let lastError;
+  for (let attempt = 0; attempt <= RATE_LIMIT_RETRIES; attempt += 1) {
+    try {
+      return await fetchRangeInPage(page, player.eaId);
+    } catch (error) {
+      lastError = error;
+      if (!isRateLimitError(error) || attempt >= RATE_LIMIT_RETRIES) break;
+      const waitMs = RATE_LIMIT_COOLDOWN_MS * (attempt + 1);
+      console.log(`Range rate limited ${player.eaId} ${player.name}; retry ${attempt + 1}/${RATE_LIMIT_RETRIES} in ${waitMs}ms.`);
+      await delay(waitMs);
+    }
+  }
+  throw lastError;
+}
 
 async function fetchRangeInPage(page, eaId) {
   return page.evaluate(async (id) => {
@@ -126,6 +152,10 @@ async function save(players, metadata) {
 
 function hasUsableRange(range) {
   return Boolean(range && (range.min > 0 || range.max > 0));
+}
+
+function isRateLimitError(error) {
+  return /(?:sign|price) 429|Failed to fetch/i.test(error?.message ?? "");
 }
 
 function delay(ms) {
