@@ -9,6 +9,7 @@ const METADATA_FILE = path.join(DATA_DIR, "metadata.json");
 const MAX_PLAYERS = Number(process.env.MAX_RANGE_PLAYERS || "0");
 const SAVE_EVERY = Number(process.env.SAVE_EVERY || "25");
 const DELAY_MS = Number(process.env.RANGE_DELAY_MS || "50");
+const REFRESH_EXISTING_RANGES = process.env.REFRESH_EXISTING_RANGES === "1";
 
 console.log("Refreshing prices before ranges.");
 await import("./update-futgg-prices.mjs");
@@ -18,10 +19,12 @@ const metadata = JSON.parse(await readFile(METADATA_FILE, "utf8"));
 
 const targets = players
   .filter((player) => player.prices.console > 0 || player.prices.pc > 0)
+  .filter((player) => REFRESH_EXISTING_RANGES || !hasUsableRange(player.priceRange))
   .sort((a, b) => Number(hasUsableRange(a.priceRange)) - Number(hasUsableRange(b.priceRange)));
 const limitedTargets = MAX_PLAYERS > 0 ? targets.slice(0, MAX_PLAYERS) : targets;
 
 console.log(`Range targets: ${limitedTargets.length}/${players.length}.`);
+console.log(`Refresh existing ranges: ${REFRESH_EXISTING_RANGES ? "yes" : "no"}.`);
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
