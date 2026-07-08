@@ -24,6 +24,10 @@ jobs:
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 360
 
+    defaults:
+      run:
+        shell: cmd
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,15 +42,12 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        shell: powershell
         run: npm.cmd ci
 
       - name: Install Playwright Chromium
-        shell: powershell
         run: npx.cmd playwright install chromium
 
       - name: Update FUT.GG ranges and prices
-        shell: powershell
         env:
           MAX_RANGE_PLAYERS: ${{ inputs.max_players }}
           RANGE_DELAY_MS: ${{ inputs.delay_ms }}
@@ -54,13 +55,12 @@ jobs:
 
       - name: Commit updated data
         if: always()
-        shell: powershell
         run: |
           git diff --quiet data
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "No data changes."
-            exit 0
-          }
+          if %ERRORLEVEL% EQU 0 (
+            echo No data changes.
+            exit /b 0
+          )
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
