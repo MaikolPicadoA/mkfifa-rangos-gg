@@ -10,7 +10,7 @@ on:
       delay_ms:
         description: "Pausa entre jugadores en milisegundos."
         required: false
-        default: "50"
+        default: "1300"
 
 permissions:
   contents: write
@@ -22,7 +22,7 @@ concurrency:
 jobs:
   update:
     runs-on: [self-hosted, Windows, X64]
-    timeout-minutes: 360
+    timeout-minutes: 900
 
     defaults:
       run:
