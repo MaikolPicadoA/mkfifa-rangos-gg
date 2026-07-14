@@ -9,6 +9,9 @@ const METADATA_FILE = path.join(DATA_DIR, "metadata.json");
 const MAX_PLAYERS = Number(process.env.MAX_RANGE_PLAYERS || "0");
 const SAVE_EVERY = Number(process.env.SAVE_EVERY || "25");
 const DELAY_MS = Number(process.env.RANGE_DELAY_MS || "50");
+const MAX_RETRIES = Number(process.env.RANGE_MAX_RETRIES || "2");
+const RATE_LIMIT_COOLDOWN_MS = Number(process.env.RANGE_429_COOLDOWN_MS || "60000");
+const MAX_CONSECUTIVE_RATE_LIMITS = Number(process.env.RANGE_MAX_CONSECUTIVE_429 || "20");
 
 console.log("Refreshing prices before ranges.");
 await import("./update-futgg-prices.mjs");
@@ -52,12 +55,13 @@ await page.waitForTimeout(3000);
 
 let updated = 0;
 let failed = 0;
+let consecutiveRateLimits = 0;
 
 try {
   for (let index = 0; index < limitedTargets.length; index += 1) {
     const player = limitedTargets[index];
     try {
-      const result = await fetchRangeInPage(page, player.eaId);
+      const result = await fetchRangeWithRetry(page, player.eaId);
       if (result?.minPrice || result?.maxPrice) {
         player.priceRange = {
           min: Number(result.minPrice ?? 0),
@@ -66,9 +70,19 @@ try {
         player.rangeUpdatedAtUtc = new Date().toISOString();
         updated += 1;
       }
+      consecutiveRateLimits = 0;
     } catch (error) {
       failed += 1;
       console.log(`Range failed ${player.eaId} ${player.name}: ${error.message}`);
+      if (isRateLimit(error)) {
+        consecutiveRateLimits += 1;
+        if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS) {
+          console.log(`Stopping after ${consecutiveRateLimits} consecutive 429 responses. Saved progress will be kept.`);
+          break;
+        }
+      } else {
+        consecutiveRateLimits = 0;
+      }
       if (failed >= 50 && updated === 0) {
         throw new Error("Too many range failures before any success.");
       }
@@ -91,6 +105,21 @@ await save(players, metadata);
 console.log(`Ranges updated this run: ${updated}.`);
 console.log(`Ranges failed this run: ${failed}.`);
 console.log(`Total players with ranges: ${metadata.totalRanges}.`);
+
+async function fetchRangeWithRetry(page, eaId) {
+  let lastError;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+    try {
+      return await fetchRangeInPage(page, eaId);
+    } catch (error) {
+      lastError = error;
+      if (!isRateLimit(error) || attempt === MAX_RETRIES) break;
+      console.log(`Rate limited for ${eaId}; waiting ${Math.round(RATE_LIMIT_COOLDOWN_MS / 1000)}s before retry ${attempt + 1}/${MAX_RETRIES}.`);
+      await delay(RATE_LIMIT_COOLDOWN_MS);
+    }
+  }
+  throw lastError;
+}
 
 async function fetchRangeInPage(page, eaId) {
   return page.evaluate(async (id) => {
@@ -123,6 +152,10 @@ async function save(players, metadata) {
 
 function hasUsableRange(range) {
   return Boolean(range && (range.min > 0 || range.max > 0));
+}
+
+function isRateLimit(error) {
+  return String(error?.message ?? error).includes("429");
 }
 
 function delay(ms) {
